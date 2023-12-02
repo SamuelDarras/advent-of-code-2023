@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 use nom::{
-    bytes::complete::{tag, take_while1},
-    character::complete::alpha1,
-    combinator::map_res,
+    bytes::complete::tag,
+    character::complete::{alpha1, digit1},
+    combinator::{map_res, recognize},
     multi::separated_list1,
-    sequence::tuple,
+    sequence::{delimited, separated_pair},
     IResult,
 };
 
@@ -22,46 +22,33 @@ fn part1(input: &str) -> String {
     input
         .lines()
         .map(|line| match parse_game(line) {
-            Ok((_, game)) => {
-                if game
-                    .sets
-                    .keys()
-                    .all(|key| game.sets.get(key).unwrap() <= set_limits.get(key).unwrap())
-                {
-                    game.id
-                } else {
-                    0
-                }
-            }
-            Err(_) => 0,
+            Ok((_, game)) => game.set.values().product(),
+            Err(_) => 1,
         })
         .sum::<usize>()
         .to_string()
 }
 
 fn parse_game(input: &str) -> IResult<&str, Game> {
-    let (input, (_, id, _)) = tuple((
+    let (input, id) = delimited(
         tag("Game "),
-        map_res(take_while1(|c: char| c.is_digit(10)), |s: &str| {
-            s.parse::<usize>()
-        }),
+        map_res(recognize(digit1), str::parse::<usize>),
         tag(": "),
-    ))(input)?;
+    )(input)?;
 
     let (input, sets) = separated_list1(tag("; "), parse_set)(input)?;
-    let mut map = HashMap::new();
-    for set in sets {
-        for handful in set {
-            if map.contains_key(&handful.0) {
-                let already: usize = *map.get(&handful.0).unwrap();
-                map.insert(handful.0, already.max(handful.1));
-            } else {
-                map.insert(handful.0, handful.1);
-            }
+
+    let mut map: HashMap<Color, usize> = HashMap::new();
+    for set in sets.into_iter() {
+        for handful in set.into_iter() {
+            match map.get(&handful.0) {
+                Some(&value) => map.insert(handful.0, value.max(handful.1)),
+                None => map.insert(handful.0, handful.1),
+            };
         }
     }
 
-    let game = Game { id, sets: map };
+    let game = Game { id, set: map };
     Ok((input, game))
 }
 
@@ -71,13 +58,12 @@ fn parse_set(input: &str) -> IResult<&str, Vec<(Color, usize)>> {
 }
 
 fn parse_handful(input: &str) -> IResult<&str, (Color, usize)> {
-    let (input, (count, _, color_str)) = tuple((
-        map_res(take_while1(|c: char| c.is_digit(10)), |s: &str| {
-            s.parse::<usize>()
-        }),
+    let (input, (count, color_str)) = separated_pair(
+        map_res(recognize(digit1), str::parse::<usize>),
         tag(" "),
         alpha1,
-    ))(input)?;
+    )(input)?;
+
     let color = match color_str {
         "red" => Color::RED,
         "green" => Color::GREEN,
@@ -90,7 +76,7 @@ fn parse_handful(input: &str) -> IResult<&str, (Color, usize)> {
 #[derive(Debug, PartialEq)]
 struct Game {
     id: usize,
-    sets: HashMap<Color, usize>,
+    set: HashMap<Color, usize>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -112,19 +98,19 @@ Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
 Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
 
-        assert_eq!("8", part1(input));
+        assert_eq!("2286", part1(input));
     }
 
     #[test]
     fn test_parse_handful() {
         let input = "10 red";
-        let (_, res) = parse_handful(input).unwrap();
-        assert_eq!(res.0, Color::RED);
-        assert_eq!(res.1, 10);
+        let (_, (color, count)) = parse_handful(input).unwrap();
+        assert_eq!(color, Color::RED);
+        assert_eq!(count, 10);
         let input = "2 blue";
-        let (_, res) = parse_handful(input).unwrap();
-        assert_eq!(res.0, Color::BLUE);
-        assert_eq!(res.1, 2);
+        let (_, (color, count)) = parse_handful(input).unwrap();
+        assert_eq!(color, Color::BLUE);
+        assert_eq!(count, 2);
     }
 
     #[test]
@@ -146,6 +132,6 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
         map.insert(Color::RED, 10);
         map.insert(Color::GREEN, 2);
         map.insert(Color::BLUE, 2);
-        assert_eq!(res, Game { id: 2, sets: map });
+        assert_eq!(res, Game { id: 2, set: map });
     }
 }
