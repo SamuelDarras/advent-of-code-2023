@@ -15,10 +15,6 @@ fn main() {
 }
 
 fn part1(input: &str) -> String {
-    let mut set_limits = HashMap::new();
-    set_limits.insert(Color::Red, 12);
-    set_limits.insert(Color::Green, 13);
-    set_limits.insert(Color::Blue, 14);
     input
         .lines()
         .map(|line| match parse_game(line) {
