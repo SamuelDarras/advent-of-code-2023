@@ -16,9 +16,9 @@ fn main() {
 
 fn part1(input: &str) -> String {
     let mut set_limits = HashMap::new();
-    set_limits.insert(Color::RED, 12);
-    set_limits.insert(Color::GREEN, 13);
-    set_limits.insert(Color::BLUE, 14);
+    set_limits.insert(Color::Red, 12);
+    set_limits.insert(Color::Green, 13);
+    set_limits.insert(Color::Blue, 14);
     input
         .lines()
         .map(|line| match parse_game(line) {
@@ -65,9 +65,9 @@ fn parse_handful(input: &str) -> IResult<&str, (Color, usize)> {
     )(input)?;
 
     let color = match color_str {
-        "red" => Color::RED,
-        "green" => Color::GREEN,
-        "blue" => Color::BLUE,
+        "red" => Color::Red,
+        "green" => Color::Green,
+        "blue" => Color::Blue,
         _ => unreachable!(),
     };
     Ok((input, (color, count)))
@@ -81,9 +81,9 @@ struct Game {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 enum Color {
-    RED,
-    GREEN,
-    BLUE,
+    Red,
+    Green,
+    Blue,
 }
 
 #[cfg(test)]
@@ -105,11 +105,11 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
     fn test_parse_handful() {
         let input = "10 red";
         let (_, (color, count)) = parse_handful(input).unwrap();
-        assert_eq!(color, Color::RED);
+        assert_eq!(color, Color::Red);
         assert_eq!(count, 10);
         let input = "2 blue";
         let (_, (color, count)) = parse_handful(input).unwrap();
-        assert_eq!(color, Color::BLUE);
+        assert_eq!(color, Color::Blue);
         assert_eq!(count, 2);
     }
 
@@ -117,11 +117,11 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
     fn test_parse_set() {
         let input = "10 red, 2 green";
         let (_, res) = parse_set(input).unwrap();
-        assert_eq!(res, vec![(Color::RED, 10), (Color::GREEN, 2)]);
+        assert_eq!(res, vec![(Color::Red, 10), (Color::Green, 2)]);
 
         let input = "4 blue";
         let (_, res) = parse_set(input).unwrap();
-        assert_eq!(res, vec![(Color::BLUE, 4)]);
+        assert_eq!(res, vec![(Color::Blue, 4)]);
     }
 
     #[test]
@@ -129,9 +129,9 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
         let input = "Game 2: 10 red, 2 green; 2 blue";
         let (_, res) = parse_game(input).unwrap();
         let mut map = HashMap::new();
-        map.insert(Color::RED, 10);
-        map.insert(Color::GREEN, 2);
-        map.insert(Color::BLUE, 2);
+        map.insert(Color::Red, 10);
+        map.insert(Color::Green, 2);
+        map.insert(Color::Blue, 2);
         assert_eq!(res, Game { id: 2, set: map });
     }
 }
