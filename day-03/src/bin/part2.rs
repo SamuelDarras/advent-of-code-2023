@@ -4,7 +4,8 @@ fn main() {
 }
 
 fn look_around(cells: &Vec<Vec<Cell>>, center: (usize, usize)) -> usize {
-    let mut number = 0;
+    let mut number = 1;
+    let mut count = 0;
     for i in -1..=1 {
         let mut deactivated = Vec::new();
         for j in -1..=1 {
@@ -17,15 +18,20 @@ fn look_around(cells: &Vec<Vec<Cell>>, center: (usize, usize)) -> usize {
             let current_cell = &cells[off_y][off_x];
             match current_cell {
                 Cell::Number { friends, .. } => {
+                    count += 1;
                     let new_number = number_from_friends(friends);
-                    number += new_number;
+                    number *= new_number;
                     friends.iter().for_each(|(idx, _)| deactivated.push(*idx));
                 }
                 _ => {}
             }
         }
     }
-    number
+    if count == 2 {
+        number
+    } else {
+        0
+    }
 }
 
 fn number_from_friends(friends: &Vec<(usize, usize)>) -> usize {
@@ -138,6 +144,6 @@ mod tests {
 .664.598..
 ";
         let res = part1(input);
-        assert_eq!("4361", res);
+        assert_eq!("467835", res);
     }
 }
