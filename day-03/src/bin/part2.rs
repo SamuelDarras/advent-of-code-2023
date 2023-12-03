@@ -3,7 +3,7 @@ fn main() {
     println!("{}", part1(input));
 }
 
-fn look_around(cells: &Vec<Vec<Cell>>, center: (usize, usize)) -> usize {
+fn look_around(cells: &[Vec<Cell>], center: (usize, usize)) -> usize {
     let mut number = 1;
     let mut count = 0;
     for i in -1..=1 {
@@ -17,17 +17,14 @@ fn look_around(cells: &Vec<Vec<Cell>>, center: (usize, usize)) -> usize {
             }
 
             let current_cell = &cells[off_y][off_x];
-            match current_cell {
-                Cell::Number { friends, .. } => {
-                    count += 1;
-                    if count > 2 {
-                        return 0;
-                    }
-                    let new_number = number_from_friends(friends);
-                    number *= new_number;
-                    friends.iter().for_each(|(idx, _)| deactivated.push(*idx));
+            if let Cell::Number { friends, .. } = current_cell {
+                count += 1;
+                if count > 2 {
+                    return 0;
                 }
-                _ => {}
+                let new_number = number_from_friends(friends);
+                number *= new_number;
+                friends.iter().for_each(|(idx, _)| deactivated.push(*idx));
             }
         }
     }
@@ -38,7 +35,7 @@ fn look_around(cells: &Vec<Vec<Cell>>, center: (usize, usize)) -> usize {
     }
 }
 
-fn number_from_friends(friends: &Vec<(usize, usize)>) -> usize {
+fn number_from_friends(friends: &[(usize, usize)]) -> usize {
     friends.iter().fold(0, |acc, (_, v)| acc * 10 + v)
 }
 
@@ -49,12 +46,9 @@ fn part1(input: &str) -> String {
 
     for (y, row) in cells.iter().enumerate() {
         for (x, cell) in row.iter().enumerate() {
-            match cell {
-                Cell::Symbol => {
-                    let symbol_value = look_around(&cells, (x, y));
-                    res += symbol_value;
-                }
-                _ => {}
+            if let Cell::Symbol = cell {
+                let symbol_value = look_around(&cells, (x, y));
+                res += symbol_value;
             }
         }
     }
