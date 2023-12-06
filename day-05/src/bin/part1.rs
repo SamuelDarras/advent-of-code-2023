@@ -7,7 +7,20 @@ fn main() {
 }
 
 fn part1(input: &str) -> String {
-    let mut lines = input.lines();
+    let almanac = parse_maps(input);
+    let res = almanac
+        .seeds
+        .iter()
+        .map(|seed| almanac.follow_map(*seed))
+        .min()
+        .unwrap();
+    println!("{res}");
+
+    "".to_string()
+}
+
+fn parse_maps(input: &str) -> Almanac {
+    let mut lines = input.lines().peekable();
     let seeds = lines
         .next()
         .unwrap()
@@ -17,21 +30,23 @@ fn part1(input: &str) -> String {
         .split_whitespace()
         .map(|s| s.parse::<usize>().unwrap())
         .collect::<Vec<_>>();
-    println!("{seeds:?}");
     lines.next();
-
-    parse_one_map(&mut lines);
-
-    "".to_string()
+    let mut maps = Vec::new();
+    while lines.peek().is_some() {
+        maps.push(parse_one_map(&mut lines));
+    }
+    Almanac { seeds, maps }
 }
 
-fn parse_one_map(lines: &mut std::str::Lines<'_>) -> Vec<(Range<usize>, Range<usize>)> {
+fn parse_one_map<'s>(
+    lines: &mut impl Iterator<Item = &'s str>,
+) -> Vec<(Range<usize>, Range<usize>)> {
     let name = lines.next().unwrap();
+    // println!("{name}");
     let mut line = lines.next().unwrap();
 
     let mut r = Vec::new();
     while line != "" {
-        println!("{line}");
         let values = line
             .split_whitespace()
             .map(|s| s.parse::<usize>().unwrap())
@@ -39,17 +54,62 @@ fn parse_one_map(lines: &mut std::str::Lines<'_>) -> Vec<(Range<usize>, Range<us
         let dst_begin = values[0];
         let src_begin = values[1];
         let length = values[2] - 1;
-        let src_range = src_begin..src_begin + length;
-        let dst_range = dst_begin..dst_begin + length;
-        println!("{src_range:?} -> {dst_range:?}");
-        line = lines.next().unwrap();
+        let src_range = src_begin..src_begin + length + 1;
+        let dst_range = dst_begin..dst_begin + length + 1;
+        // println!("{src_range:?} -> {dst_range:?}");
+        r.push((src_range, dst_range));
+        if let Some(l) = lines.next() {
+            line = l;
+        } else {
+            return r;
+        }
     }
     r
+}
+
+#[derive(Debug)]
+struct Almanac {
+    seeds: Vec<usize>,
+    maps: Vec<Vec<(Range<usize>, Range<usize>)>>,
+}
+impl Almanac {
+    fn follow_map(&self, value: usize) -> usize {
+        let mut value = value;
+        for i in 0..self.maps.len() {
+            value = self.map(i, value);
+        }
+        value
+    }
+
+    fn map(&self, map_idx: usize, value: usize) -> usize {
+        let ranges = &self.maps[map_idx];
+        let mut res = value;
+        for range in ranges {
+            if range.0.contains(&value) {
+                res = (value as isize + (range.1.start as isize - range.0.start as isize)) as usize;
+                break;
+            }
+        }
+        res
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_almanac_map() {
+        let almanac = Almanac {
+            seeds: Vec::new(),
+            maps: vec![vec![(0..10, 20..30)]],
+        };
+
+        let res = almanac.map(0, 5);
+        assert_eq!(res, 25);
+        let res = almanac.map(0, 11);
+        assert_eq!(res, 11);
+    }
 
     #[test]
     fn test_example() {
